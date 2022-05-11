@@ -131,7 +131,7 @@ gegl_op_class_init (GeglOpClass *klass)
     "title",       _("Old Photo filter"),
     "categories",  "Generic",
     "reference-hash", "45ed565h5238500fc2001b2ac",
-    "description", _("Simulate a photo from the early 21st century "
+    "description", _("Simulate a photo from the early 20th century "
                      ""),
     NULL);
 }
