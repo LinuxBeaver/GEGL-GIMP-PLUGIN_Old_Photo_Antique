@@ -2,6 +2,10 @@
 A new GEGL Filter for Gimp to make antique effects. On Windows and Mac you have to compile. On Linux just put stroke.so in /gegl-0.4/plugins 
 
 
+![image preview](preview2.png )
+
+
+
 ## OS specific location to put GEGL Filter binaries 
 
 Windows
@@ -12,7 +16,3 @@ Windows
  
  Linux (Flatpak)
  /home/(USERNAME)/.var/app/org.gimp.GIMP/data/gegl-0.4/plug-ins
-
-
-
-![image preview](preview2.png )
