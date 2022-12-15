@@ -14,6 +14,7 @@
  * License along with GEGL; if not, see <https://www.gnu.org/licenses/>.
  *
  * Copyright 2006 Øyvind Kolås <pippin@gimp.org>
+ * 2022 Beaver Old Photo Antique Effect.
  */
 
 #include "config.h"
@@ -21,23 +22,27 @@
 
 #ifdef GEGL_PROPERTIES
 
-property_double (scale1, _("Saturation"), 1)
-  value_range (0.0, 2.4)
-  ui_range (0.0, 2.4)
+
+property_double (scale1, _("Saturation"), -11)
+  value_range (-100.0, 20.0)
+  ui_range (-100.0, 20.0)
   ui_gamma (1.5)
 
-property_double (scale, _("Sepia strength"), 1.0)
+property_double (scale, _("Sepia strength"), 0.3)
     description(_("Strength of the sepia effect"))
     value_range (0.0, 1.0)
 
 
-property_double (brightness, _("Brightness"), 0.0)
+property_double (brightness, _("Brightness"), 0.88)
    description  (_("Amount to increase brightness"))
-   value_range  (-0.1, 0.1)
-   ui_range     (-0.1, 0.1)
+   value_range  (-30.0, 10.0)
+   ui_range     (-30.0, 10.0)
 
-property_double (noisergb, _("Noise meter"), 0.30)
+property_double (noisergb, _("Noise meter"), 0.2)
    value_range  (0.0, 1.00)
+
+property_boolean (independent, _("Should RGB noise have color?"), TRUE)
+   description (_("Control amount of noise for each RGB channel separately"))
  
 property_double (gaus, _("Blur"), 1.5)
    description (_("mild gaussian blur"))
@@ -60,7 +65,7 @@ property_double (gaus, _("Blur"), 1.5)
 static void attach (GeglOperation *operation)
 {
   GeglNode *gegl = operation->node;
-  GeglNode *input, *output, *bc, *sat, *sep, *noisergb, *gaus, *bright;
+  GeglNode *input, *output, *bc, *sat, *sep, *noisergb, *gaus;
 
   input    = gegl_node_get_input_proxy (gegl, "input");
   output   = gegl_node_get_output_proxy (gegl, "output");
@@ -72,15 +77,11 @@ static void attach (GeglOperation *operation)
 
 
   sat    = gegl_node_new_child (gegl,
-                                  "operation", "gegl:saturation",
+                                  "operation", "gegl:hue-chroma",
                                   NULL);
 
   sep = gegl_node_new_child (gegl,
                                   "operation", "gegl:sepia",
-                                  NULL);
-
-  bright = gegl_node_new_child (gegl,
-                                  "operation", "gegl:brightness-contrast",
                                   NULL);
 
   gaus = gegl_node_new_child (gegl,
@@ -89,16 +90,16 @@ static void attach (GeglOperation *operation)
 
 
 
-  gegl_node_link_many (input, noisergb, gaus, sat, sep, bright, output, NULL);
+  gegl_node_link_many (input, noisergb, gaus, sat, sep, output, NULL);
 
 
 
 
-  gegl_operation_meta_redirect (operation, "scale1", sat, "scale");
+  gegl_operation_meta_redirect (operation, "scale1", sat, "chroma");
 
   gegl_operation_meta_redirect (operation, "scale", sep, "scale");
 
-  gegl_operation_meta_redirect (operation, "brightness", bright, "brightness");
+  gegl_operation_meta_redirect (operation, "brightness", sat, "lightness");
 
   gegl_operation_meta_redirect (operation, "noisergb", noisergb, "red");
 
@@ -109,6 +110,9 @@ static void attach (GeglOperation *operation)
   gegl_operation_meta_redirect (operation, "gaus", gaus, "std-dev-x");
 
   gegl_operation_meta_redirect (operation, "gaus", gaus, "std-dev-y");
+
+  gegl_operation_meta_redirect (operation, "independent", noisergb, "independent");
+
 
 
 
@@ -131,7 +135,7 @@ gegl_op_class_init (GeglOpClass *klass)
     "title",       _("Old Photo filter"),
     "categories",  "Generic",
     "reference-hash", "45ed565h5238500fc2001b2ac",
-    "description", _("Simulate a photo from the early 20th century "
+    "description", _("Simulate a photo from the past by intentionally reducing image quality."
                      ""),
     NULL);
 }
