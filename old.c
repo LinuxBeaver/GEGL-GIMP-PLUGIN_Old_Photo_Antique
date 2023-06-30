@@ -17,6 +17,18 @@
  * 2022 Beaver Old Photo Antique Effect.
  */
 
+/* 2021 GEGL Graph which this plugin is based on.  If you give 
+this to Gimp's GEGL Graph filter you can get a static preview of
+this filter without installing it.  Fun fact - this is from my
+early days of studying GEGL.
+
+noise-rgb 
+gaussian-blur std-dev-y=1.3 std-dev-x=1.3
+gray
+sepia srgb=1 scale=2
+saturation scale=1.2 colorspace=Native
+ */
+
 #include "config.h"
 #include <glib/gi18n-lib.h>
 
@@ -29,23 +41,23 @@ property_double (scale1, _("Saturation"), -11)
   ui_gamma (1.5)
 
 property_double (scale, _("Sepia strength"), 0.3)
-    description(_("Strength of the sepia effect"))
+    description(_("Strength of the sepia effect. At 0 there is no sepia effect"))
     value_range (0.0, 1.0)
 
 
 property_double (brightness, _("Brightness"), 0.88)
-   description  (_("Amount to increase brightness"))
+   description  (_("Brightness meter - also goes into negative."))
    value_range  (-30.0, 10.0)
    ui_range     (-30.0, 10.0)
 
 property_double (noisergb, _("Noise meter"), 0.2)
-   value_range  (0.0, 1.00)
+   value_range  (0.0, 0.30)
 
 property_boolean (independent, _("Should RGB noise have color?"), TRUE)
    description (_("Control amount of noise for each RGB channel separately"))
  
 property_double (gaus, _("Blur"), 1.5)
-   description (_("mild gaussian blur"))
+   description (_("mild gaussian blur to mimic a dated photo"))
    value_range (0.0, 3.5)
    ui_range    (0.0, 3.5)
    ui_gamma    (3.0)
@@ -53,40 +65,13 @@ property_double (gaus, _("Blur"), 1.5)
    ui_meta     ("axis", "x")
 
 
-property_double (shadows, _("Slide to lowest setting to create a vignette"), 0.0)
-    description (_("Adjust exposure of shadows"))
+property_double (shadows, _("Shadow like Vignette"), 0.0)
+    description (_("Adjust exposure of shadows - on low settings this creates a vignette like effect"))
     value_range (-100.0, 100.0)
 
 property_double (highlights, _("Highlights"), 0.0)
     description (_("Adjust exposure of highlights"))
     value_range (-70.0, 50.0)
-
-property_double (whitepoint, _("Shadow Highlight White point adjustment"), 0.0)
-    description (_("Shift white point"))
-    value_range (-10.0, 10.0)
-    ui_meta     ("role", "output-extent")
-
-property_double (radius, _("Shadow Highlight Radius"), 100.0)
-    description (_("Spatial extent"))
-    value_range (0.1, 1500.0)
-    ui_range    (0.1, 200.0)
-    ui_meta     ("role", "output-extent")
-
-property_double (compress, _("Shadow Hightlight Compress"), 50.0)
-    description (_("Compress the effect on shadows/highlights and preserve midtones"))
-    value_range (0.0, 100.0)
-    ui_meta     ("role", "output-extent")
-
-property_double (shadows_ccorrect, _("Shadows color adjustment"), 100.0)
-    description (_("Adjust saturation of shadows"))
-    value_range (0.0, 100.0)
-    ui_meta     ("role", "output-extent")
-
-property_double (highlights_ccorrect, _("Highlights color adjustment"), 50.0)
-    description (_("Adjust saturation of highlights"))
-    value_range (0.0, 100.0)
-    ui_meta     ("role", "output-extent")
-
 
 
 
@@ -101,7 +86,7 @@ property_double (highlights_ccorrect, _("Highlights color adjustment"), 50.0)
 static void attach (GeglOperation *operation)
 {
   GeglNode *gegl = operation->node;
-  GeglNode *input, *output, *bc, *sat, *sep, *noisergb, *shadowhighlights, *gaus;
+  GeglNode *input, *output, *sat, *sep, *noisergb, *shadowhighlights, *gaus;
 
   input    = gegl_node_get_input_proxy (gegl, "input");
   output   = gegl_node_get_output_proxy (gegl, "output");
@@ -125,47 +110,27 @@ static void attach (GeglOperation *operation)
                                   NULL);
 
   shadowhighlights    = gegl_node_new_child (gegl,
-                                  "operation", "gegl:shadows-highlights",
+                                  "operation", "gegl:shadows-highlights", "white-point", 0.0, "radius", 0.0, "compress", 50.0, "compress", 50.0, "shadows-ccorrect", 100.0, "highlights-ccorrect", 50.0,
                                   NULL);
 
 
+/* This is a very simple GEGL Graph. It is just five filters chained together. RGB Noise, Gaussian Blur, Shadow Highlights, Hue Chroma, and Sepia.
+This (five steps) is the minimum requirement for me to make a filter out of something */
 
-
-
-
-  gegl_node_link_many (input, noisergb, gaus, shadowhighlights, sat, sep, output, NULL);
-
-
+ gegl_node_link_many (input, noisergb, gaus, shadowhighlights, sat, sep, output, NULL);
 
 
   gegl_operation_meta_redirect (operation, "scale1", sat, "chroma");
-
   gegl_operation_meta_redirect (operation, "scale", sep, "scale");
-
   gegl_operation_meta_redirect (operation, "brightness", sat, "lightness");
-
   gegl_operation_meta_redirect (operation, "noisergb", noisergb, "red");
-
   gegl_operation_meta_redirect (operation, "noisergb", noisergb, "green");
-
   gegl_operation_meta_redirect (operation, "noisergb", noisergb, "blue");
-
   gegl_operation_meta_redirect (operation, "gaus", gaus, "std-dev-x");
-
   gegl_operation_meta_redirect (operation, "gaus", gaus, "std-dev-y");
-
   gegl_operation_meta_redirect (operation, "independent", noisergb, "independent");
-
-      gegl_operation_meta_redirect (operation, "radius", shadowhighlights, "radius");
-      gegl_operation_meta_redirect (operation, "shadows", shadowhighlights, "shadows");
-      gegl_operation_meta_redirect (operation, "highlights", shadowhighlights, "highlights");
-      gegl_operation_meta_redirect (operation, "whitepoint", shadowhighlights, "whitepoint");
-      gegl_operation_meta_redirect (operation, "compress", shadowhighlights, "compress");
-      gegl_operation_meta_redirect (operation, "shadows-ccorrect", shadowhighlights, "shadows-ccorrect");
-      gegl_operation_meta_redirect (operation, "highlights-ccorrect", shadowhighlights, "highlights-ccorrect");
-
-
-
+  gegl_operation_meta_redirect (operation, "shadows", shadowhighlights, "shadows");
+  gegl_operation_meta_redirect (operation, "highlights", shadowhighlights, "highlights");
 
 
 
