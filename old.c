@@ -45,8 +45,8 @@ property_double (scale, _("Sepia strength"), 0.3)
     value_range (0.0, 1.0)
 
 
-property_double (brightness, _("Brightness"), 0.88)
-   description  (_("Brightness meter - also goes into negative."))
+property_double (lightness, _("Lightness"), 0.88)
+   description  (_("Lightness meter - also goes into negative."))
    value_range  (-30.0, 10.0)
    ui_range     (-30.0, 10.0)
 
@@ -61,9 +61,6 @@ property_double (gaus, _("Blur"), 1.5)
    value_range (0.0, 3.5)
    ui_range    (0.0, 3.5)
    ui_gamma    (3.0)
-   ui_meta     ("unit", "pixel-distance")
-   ui_meta     ("axis", "x")
-
 
 property_double (shadows, _("Shadow like Vignette"), 0.0)
     description (_("Adjust exposure of shadows - on low settings this creates a vignette like effect"))
@@ -72,8 +69,6 @@ property_double (shadows, _("Shadow like Vignette"), 0.0)
 property_double (highlights, _("Highlights"), 0.0)
     description (_("Adjust exposure of highlights"))
     value_range (-70.0, 50.0)
-
-
 
 #else
 
@@ -110,19 +105,14 @@ static void attach (GeglOperation *operation)
                                   NULL);
 
   shadowhighlights    = gegl_node_new_child (gegl,
-                                  "operation", "gegl:shadows-highlights", "white-point", 0.0, "radius", 0.0, "compress", 50.0, "compress", 50.0, "shadows-ccorrect", 100.0, "highlights-ccorrect", 50.0,
+                                  "operation", "gegl:shadows-highlights", "whitepoint", 0.0, "radius", 0.10,  "compress", 50.0, "shadows-ccorrect", 100.0, "highlights-ccorrect", 50.0,
                                   NULL);
-
-
-/* This is a very simple GEGL Graph. It is just five filters chained together. RGB Noise, Gaussian Blur, Shadow Highlights, Hue Chroma, and Sepia.
-This (five steps) is the minimum requirement for me to make a filter out of something */
 
  gegl_node_link_many (input, noisergb, gaus, shadowhighlights, sat, sep, output, NULL);
 
-
   gegl_operation_meta_redirect (operation, "scale1", sat, "chroma");
   gegl_operation_meta_redirect (operation, "scale", sep, "scale");
-  gegl_operation_meta_redirect (operation, "brightness", sat, "lightness");
+  gegl_operation_meta_redirect (operation, "lightness", sat, "lightness");
   gegl_operation_meta_redirect (operation, "noisergb", noisergb, "red");
   gegl_operation_meta_redirect (operation, "noisergb", noisergb, "green");
   gegl_operation_meta_redirect (operation, "noisergb", noisergb, "blue");
@@ -131,8 +121,6 @@ This (five steps) is the minimum requirement for me to make a filter out of some
   gegl_operation_meta_redirect (operation, "independent", noisergb, "independent");
   gegl_operation_meta_redirect (operation, "shadows", shadowhighlights, "shadows");
   gegl_operation_meta_redirect (operation, "highlights", shadowhighlights, "highlights");
-
-
 
 }
 
@@ -146,12 +134,11 @@ gegl_op_class_init (GeglOpClass *klass)
   operation_class->attach = attach;
 
   gegl_operation_class_set_keys (operation_class,
-    "name",        "gegl:antique",
+    "name",        "lb:antique",
     "title",       _("Old Photo filter"),
-    "categories",  "Generic",
     "reference-hash", "45ed565h5238500fc2001b2ac",
-    "description", _("Simulate a photo from the past by intentionally reducing image quality."
-                     ""),
+    "description", _("Simulate a photo from the past by intentionally reducing image quality."),
+
     NULL);
 }
 
