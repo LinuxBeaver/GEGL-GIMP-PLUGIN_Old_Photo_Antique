@@ -51,7 +51,8 @@ property_double (lightness, _("Lightness"), 0.88)
    ui_range     (-30.0, 10.0)
 
 property_double (noisergb, _("Noise meter"), 0.2)
-   value_range  (0.0, 0.30)
+   ui_range  (0.0, 0.30)
+   value_range  (0.0, 1.00)
 
 property_boolean (independent, _("Should RGB noise have color?"), TRUE)
    description (_("Control amount of noise for each RGB channel separately"))
