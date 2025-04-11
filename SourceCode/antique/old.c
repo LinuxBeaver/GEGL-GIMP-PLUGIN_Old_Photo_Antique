@@ -35,32 +35,33 @@ saturation scale=1.2 colorspace=Native
 #ifdef GEGL_PROPERTIES
 
 
-property_double (scale1, _("Saturation"), -11)
+property_double (scale1, _("Color Boost"), -11)
   value_range (-100.0, 20.0)
-  ui_range (-100.0, 20.0)
+  ui_range (-100.0, 5.0)
   ui_gamma (1.5)
 
-property_double (scale, _("Sepia strength"), 0.3)
+property_double (scale, _("Sepia strength"), 1.0)
     description(_("Strength of the sepia effect. At 0 there is no sepia effect"))
     value_range (0.0, 1.0)
 
 
-property_double (lightness, _("Lightness"), 0.88)
-   description  (_("Lightness meter - also goes into negative."))
+property_double (lightness, _("Darkness to Lightness"), -10.0)
+   description  (_("Lightness control"))
    value_range  (-30.0, 10.0)
    ui_range     (-30.0, 10.0)
 
 property_double (noisergb, _("Noise meter"), 0.2)
-   ui_range  (0.0, 0.30)
    value_range  (0.0, 1.00)
+   ui_range  (0.0, 0.5)
+
 
 property_boolean (independent, _("Should RGB noise have color?"), TRUE)
    description (_("Control amount of noise for each RGB channel separately"))
  
 property_double (gaus, _("Blur"), 1.5)
-   description (_("mild gaussian blur to mimic a dated photo"))
+   description (_("Mild gaussian blur to mimic a dated photo's lower quality"))
    value_range (0.0, 3.5)
-   ui_range    (0.0, 3.5)
+   ui_range    (0.0, 3.0)
    ui_gamma    (3.0)
 
 property_double (shadows, _("Shadows adjust"), 0.0)
@@ -70,6 +71,10 @@ property_double (shadows, _("Shadows adjust"), 0.0)
 property_double (highlights, _("Highlights"), 0.0)
     description (_("Adjust exposure of highlights"))
     value_range (-70.0, 50.0)
+
+property_double (inlow, _("Levels In low light"), 0.0)
+    description (_("Levels in low setting to tweak the lighting. Recommended to apply when sepia is present. "))
+    value_range (0.0, 1.0)
 
 #else
 
@@ -82,34 +87,52 @@ property_double (highlights, _("Highlights"), 0.0)
 static void attach (GeglOperation *operation)
 {
   GeglNode *gegl = operation->node;
-  GeglNode *input, *output, *sat, *sep, *noisergb, *shadowhighlights, *gaus;
+  
 
-  input    = gegl_node_get_input_proxy (gegl, "input");
-  output   = gegl_node_get_output_proxy (gegl, "output");
+  GeglNode *input    = gegl_node_get_input_proxy (gegl, "input");
+  GeglNode *output   = gegl_node_get_output_proxy (gegl, "output");
 
 
-  noisergb = gegl_node_new_child (gegl,
+  GeglNode *noisergb = gegl_node_new_child (gegl,
                                   "operation", "gegl:noise-rgb",
                                   NULL);
 
 
-  sat    = gegl_node_new_child (gegl,
+  GeglNode *sat    = gegl_node_new_child (gegl,
                                   "operation", "gegl:hue-chroma",
                                   NULL);
 
-  sep = gegl_node_new_child (gegl,
+  GeglNode *sep = gegl_node_new_child (gegl,
                                   "operation", "gegl:sepia",
                                   NULL);
 
-  gaus = gegl_node_new_child (gegl,
+  GeglNode *opacity = gegl_node_new_child (gegl,
+                                  "operation", "gegl:opacity",
+                                  NULL);
+
+  GeglNode *normal = gegl_node_new_child (gegl,
+                                  "operation", "gegl:over",
+                                  NULL);
+
+  GeglNode *gaus = gegl_node_new_child (gegl,
                                   "operation", "gegl:gaussian-blur",
                                   NULL);
 
-  shadowhighlights    = gegl_node_new_child (gegl,
+  GeglNode *shadowhighlights    = gegl_node_new_child (gegl,
                                   "operation", "gegl:shadows-highlights", "whitepoint", 0.0, "radius", 0.10,  "compress", 50.0, "shadows-ccorrect", 100.0, "highlights-ccorrect", 50.0,
                                   NULL);
 
- gegl_node_link_many (input, noisergb, gaus, shadowhighlights, sat, sep, output, NULL);
+#define mysyntax \
+" subtract value=0.1   "\
+
+
+     GeglNode *graph    = gegl_node_new_child (gegl,
+                                  "operation", "gegl:gegl", "string", mysyntax, 
+                                  NULL);
+
+ gegl_node_link_many (input, noisergb, gaus, shadowhighlights, sat, sep, normal, output, NULL);
+  gegl_node_connect (normal, "aux", opacity, "output");
+ gegl_node_link_many (sep, graph, opacity, NULL);
 
   gegl_operation_meta_redirect (operation, "scale1", sat, "chroma");
   gegl_operation_meta_redirect (operation, "scale", sep, "scale");
@@ -122,6 +145,7 @@ static void attach (GeglOperation *operation)
   gegl_operation_meta_redirect (operation, "independent", noisergb, "independent");
   gegl_operation_meta_redirect (operation, "shadows", shadowhighlights, "shadows");
   gegl_operation_meta_redirect (operation, "highlights", shadowhighlights, "highlights");
+ gegl_operation_meta_redirect (operation, "inlow", opacity, "value");
 
 }
 
