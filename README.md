@@ -1,8 +1,12 @@
 # GEGL---Old-Photo-Effect---Make-your-photos-have-early-20th-century-aesthetics
 
-Gimp Plugin that makes photos look old and retro. 
+GIMP Plugin that makes photos look old and retro. Download below 
+
+https://github.com/LinuxBeaver/GEGL-GIMP-PLUGIN_Old_Photo_Antique/releases/
 
 ![image preview](preview2.png )
+
+Look in filters>decor to find it.
 
 ## OS specific location to put GEGL Filter binaries 
 
@@ -10,10 +14,10 @@ Windows
  C:\\Users\<YOUR NAME>\AppData\Local\gegl-0.4\plug-ins
  
  Linux 
- /home/(USERNAME)/.local/share/gegl-0.4/plug-ins
+`~/.local/share/gegl-0.4/plug-ins`
  
  Linux (Flatpak)
- /home/(USERNAME)/.var/app/org.gimp.GIMP/data/gegl-0.4/plug-ins
+`~/.var/app/org.gimp.GIMP/data/gegl-0.4/plug-ins`
 
 ## Compiling and Installing
 
