@@ -160,9 +160,11 @@ gegl_op_class_init (GeglOpClass *klass)
 
   gegl_operation_class_set_keys (operation_class,
     "name",        "lb:antique",
-    "title",       _("Old Photo filter"),
+    "title",       _("Old Photo Antique"),
     "reference-hash", "45ed565h5238500fc2001b2ac",
     "description", _("Simulate a photo from the past by intentionally reducing image quality."),
+    "gimp:menu-path", "<Image>/Filters/Decor/",
+    "gimp:menu-label", _("Old Photo Antique..."),
 
     NULL);
 }
