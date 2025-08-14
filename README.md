@@ -56,3 +56,11 @@ Then build the same way you would on Linux:
 meson setup --buildtype=release build
 ninja -C build
 ```
+
+## Sister plugin
+
+This plugin has a sister plugin that debuted three years after its release (2022 - 2025) named Antique 2
+
+You can check it out here 
+
+https://github.com/LinuxBeaver/GEGL-GIMP-PLUGIN_Old_Photo_Antique2/
